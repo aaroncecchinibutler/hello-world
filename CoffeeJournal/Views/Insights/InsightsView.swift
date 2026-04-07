@@ -14,12 +14,14 @@ struct InsightsView: View {
                 } else {
                     PaywallView(
                         featureName: "Insights",
-                        description: "Discover your taste preferences with beautiful charts and data-driven insights from your journal.",
-                        systemImage: "chart.bar.fill"
+                        description: "Discover your taste preferences with charts and data-driven patterns from your journal.",
+                        systemImage: "chart.bar"
                     )
                 }
             }
+            .background(Color.appBackground)
             .navigationTitle("Insights")
+            .toolbarBackground(Color.appBackground, for: .navigationBar)
         }
         .task { await vm.computeInsights(from: entries) }
         .onChange(of: entries.count) {
@@ -30,22 +32,29 @@ struct InsightsView: View {
     @ViewBuilder
     private var premiumContent: some View {
         if vm.isLoading {
-            ProgressView("Analysing your journal…")
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            VStack(spacing: 8) {
+                ProgressView()
+                    .tint(Color.appAccent)
+                Text("Analysing your journal…")
+                    .font(Constants.Typography.caption)
+                    .foregroundStyle(Color.textTertiary)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if vm.insights.isEmpty {
             EmptyStateView(
                 systemImage: "chart.bar",
                 title: "No Insights Yet",
-                message: "Add more entries to your journal to unlock personalised insights."
+                message: "Add more entries to unlock personalised taste patterns."
             )
         } else {
             ScrollView {
-                LazyVStack(spacing: 16) {
+                LazyVStack(spacing: 10) {
                     ForEach(vm.insights) { insight in
                         InsightCardView(insight: insight)
                     }
                 }
-                .padding()
+                .padding(.horizontal, Constants.Layout.pageInset)
+                .padding(.vertical, Constants.Layout.pageInset)
             }
         }
     }

@@ -4,28 +4,45 @@ struct OriginSection: View {
     @Bindable var vm: EntryFormViewModel
 
     var body: some View {
-        Section("Origin") {
-            LabeledContent("Country") {
+        FormSection(title: "Origin") {
+            FormRow(label: "Country") {
+                Spacer()
                 TextField("e.g. Ethiopia", text: $vm.originCountry)
+                    .font(Constants.Typography.body)
+                    .foregroundStyle(Color.textPrimary)
                     .multilineTextAlignment(.trailing)
             }
-            LabeledContent("Region") {
+            FormRow(label: "Region") {
+                Spacer()
                 TextField("e.g. Yirgacheffe", text: $vm.originRegion)
+                    .font(Constants.Typography.body)
+                    .foregroundStyle(Color.textPrimary)
                     .multilineTextAlignment(.trailing)
             }
-            LabeledContent("Farm / Producer") {
+            FormRow(label: "Farm") {
+                Spacer()
                 TextField("Optional", text: $vm.originFarm)
+                    .font(Constants.Typography.body)
+                    .foregroundStyle(Color.textPrimary)
                     .multilineTextAlignment(.trailing)
             }
-            Picker("Processing", selection: $vm.processingMethod) {
-                ForEach(ProcessingMethod.allCases) { method in
-                    Text(method.displayName).tag(method)
+            FormRow(label: "Processing") {
+                Spacer()
+                Picker("", selection: $vm.processingMethod) {
+                    ForEach(ProcessingMethod.allCases) { m in
+                        Text(m.displayName).tag(m)
+                    }
                 }
+                .tint(Color.textSecondary)
             }
-            Picker("Roast Level", selection: $vm.roastLevel) {
-                ForEach(RoastLevel.allCases) { level in
-                    Text(level.displayName).tag(level)
+            FormRow(label: "Roast") {
+                Spacer()
+                Picker("", selection: $vm.roastLevel) {
+                    ForEach(RoastLevel.allCases) { l in
+                        Text(l.displayName).tag(l)
+                    }
                 }
+                .tint(Color.textSecondary)
             }
         }
     }

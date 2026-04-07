@@ -4,38 +4,46 @@ struct RatingsNotesSection: View {
     @Bindable var vm: EntryFormViewModel
 
     var body: some View {
-        Section("Your Take") {
-            VStack(alignment: .leading, spacing: 8) {
+        FormSection(title: "Your Take") {
+            // Rating row
+            FormRow {
                 Text("Rating")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                HStack {
-                    StarRatingView(rating: $vm.rating)
-                    Spacer()
+                    .font(Constants.Typography.body)
+                    .foregroundStyle(Color.textPrimary)
+                Spacer()
+                HStack(spacing: 8) {
+                    StarRatingView(rating: $vm.rating, starSize: 20)
                     Text(ratingLabel)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .font(Constants.Typography.caption)
+                        .foregroundStyle(Color.textTertiary)
+                        .frame(width: 96, alignment: .leading)
                 }
             }
-            .padding(.vertical, 4)
 
-            VStack(alignment: .leading, spacing: 4) {
+            // Notes
+            VStack(alignment: .leading, spacing: 6) {
                 Text("Notes")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .font(Constants.Typography.caption)
+                    .foregroundStyle(Color.textTertiary)
+
                 TextEditor(text: $vm.personalNotes)
+                    .font(Constants.Typography.body)
+                    .foregroundStyle(Color.textPrimary)
                     .frame(minHeight: 80)
+                    .scrollContentBackground(.hidden)
+                    .background(Color.clear)
             }
-            .padding(.vertical, 4)
+            .padding(.horizontal, Constants.Layout.pageInset)
+            .padding(.vertical, 12)
         }
     }
 
     private var ratingLabel: String {
         switch vm.rating {
-        case 1: return "Wouldn't order again"
+        case 1: return "Avoid"
         case 2: return "Decent"
-        case 3: return "Enjoyable"
-        case 4: return "Really good"
+        case 3: return "Good"
+        case 4: return "Great"
         case 5: return "Exceptional"
         default: return ""
         }

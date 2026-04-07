@@ -5,12 +5,12 @@ struct ContentView: View {
         TabView {
             JournalListView()
                 .tabItem {
-                    Label("Journal", systemImage: "book.closed.fill")
+                    Label("Journal", systemImage: "book.closed")
                 }
 
             InsightsView()
                 .tabItem {
-                    Label("Insights", systemImage: "chart.bar.fill")
+                    Label("Insights", systemImage: "chart.bar")
                 }
 
             RecommendationsView()
@@ -20,10 +20,20 @@ struct ContentView: View {
 
             SettingsView()
                 .tabItem {
-                    Label("Settings", systemImage: "gearshape.fill")
+                    Label("Settings", systemImage: "gearshape")
                 }
         }
-        .tint(Color.brewBrown)
+        // Tab bar: use appSurface + appBorder line, accent on selected
+        .tint(Color.appAccent)
+        .onAppear {
+            let appearance = UITabBarAppearance()
+            appearance.configureWithOpaqueBackground()
+            appearance.backgroundColor = UIColor.appSurface
+            // 1 pt top border instead of default shadow
+            appearance.shadowColor = UIColor.appBorder
+            UITabBar.appearance().standardAppearance = appearance
+            UITabBar.appearance().scrollEdgeAppearance = appearance
+        }
     }
 }
 

@@ -15,24 +15,32 @@ struct JournalListView: View {
                 clientFilter: vm.filter
             )
             .searchable(text: $vm.searchText, prompt: "Search coffees, roasters, origins…")
-            .navigationTitle("Coffee Journal")
+            .background(Color.appBackground)
+            .navigationTitle("Journal")
+            .navigationBarTitleDisplayMode(.large)
+            .toolbarBackground(Color.appBackground, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         showingAddEntry = true
                     } label: {
                         Image(systemName: "plus")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundStyle(Color.appAccent)
                     }
-                    .accessibilityLabel("Add entry")
                 }
-
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
                         showingFilters = true
                     } label: {
-                        Label("Filter", systemImage: vm.isFilterActive ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
+                        Image(
+                            systemName: vm.isFilterActive
+                                ? "line.3.horizontal.decrease.circle.fill"
+                                : "line.3.horizontal.decrease.circle"
+                        )
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(vm.isFilterActive ? Color.appAccent : Color.textSecondary)
                     }
-                    .accessibilityLabel(vm.isFilterActive ? "Filters active" : "Filter entries")
                 }
             }
             .sheet(isPresented: $showingAddEntry) {
@@ -46,7 +54,6 @@ struct JournalListView: View {
 }
 
 // MARK: - QueryableJournalList
-// Separate child view owns @Query so it can receive runtime predicate + sort at init time.
 
 struct QueryableJournalList: View {
     @Environment(\.modelContext) private var context
@@ -72,10 +79,8 @@ struct QueryableJournalList: View {
                     systemImage: "cup.and.saucer",
                     title: entries.isEmpty ? "No Entries Yet" : "No Matches",
                     message: entries.isEmpty
-                        ? "Start by adding your first coffee journal entry."
-                        : "Try adjusting your search or filters.",
-                    actionTitle: entries.isEmpty ? "Add Coffee" : nil,
-                    action: nil
+                        ? "Tap + to log your first coffee."
+                        : "Try adjusting your search or filters."
                 )
             } else {
                 List {
@@ -83,14 +88,16 @@ struct QueryableJournalList: View {
                         NavigationLink(destination: EntryDetailView(entry: entry)) {
                             JournalEntryRow(entry: entry)
                         }
+                        .listRowBackground(Color.appSurface)
+                        .listRowSeparatorTint(Color.appBorder)
                     }
                     .onDelete { indexSet in
-                        for i in indexSet {
-                            context.delete(filteredEntries[i])
-                        }
+                        for i in indexSet { context.delete(filteredEntries[i]) }
                     }
                 }
                 .listStyle(.insetGrouped)
+                .scrollContentBackground(.hidden)
+                .background(Color.appBackground)
             }
         }
     }

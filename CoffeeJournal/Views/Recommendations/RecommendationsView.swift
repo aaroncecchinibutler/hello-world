@@ -12,8 +12,13 @@ struct RecommendationsView: View {
         NavigationStack {
             Group {
                 if vm.isLoading {
-                    ProgressView("Finding matches…")
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    VStack(spacing: 8) {
+                        ProgressView().tint(Color.appAccent)
+                        Text("Finding matches…")
+                            .font(Constants.Typography.caption)
+                            .foregroundStyle(Color.textTertiary)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if vm.recommendations.isEmpty {
                     EmptyStateView(
                         systemImage: "sparkles",
@@ -21,10 +26,12 @@ struct RecommendationsView: View {
                         message: "Add journal entries so we can learn your taste profile."
                     )
                 } else {
-                    recommendationsList
+                    list
                 }
             }
+            .background(Color.appBackground)
             .navigationTitle("Discover")
+            .toolbarBackground(Color.appBackground, for: .navigationBar)
         }
         .task { await vm.loadRecommendations(basedOn: entries) }
         .onChange(of: entries.count) {
@@ -32,10 +39,9 @@ struct RecommendationsView: View {
         }
     }
 
-    @ViewBuilder
-    private var recommendationsList: some View {
+    private var list: some View {
         ScrollView {
-            LazyVStack(spacing: 16) {
+            LazyVStack(spacing: 10) {
                 ForEach(vm.recommendations.prefix(freeLimit)) { rec in
                     RecommendationCardView(recommendation: rec)
                 }
@@ -46,38 +52,33 @@ struct RecommendationsView: View {
                             RecommendationCardView(recommendation: rec)
                         }
                     } else {
-                        // Paywall interstitial
-                        lockedSection
+                        lockedBanner
                     }
                 }
             }
-            .padding()
+            .padding(.horizontal, Constants.Layout.pageInset)
+            .padding(.vertical, Constants.Layout.pageInset)
         }
     }
 
-    private var lockedSection: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "lock.fill")
-                .font(.largeTitle)
-                .foregroundStyle(Color.brewBrown)
-
-            Text("\(vm.recommendations.count - freeLimit) More Recommendations")
-                .font(.headline)
-
-            Text("Upgrade to Premium to unlock your full personalised coffee discovery list.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-
-            NavigationLink("Upgrade to Premium →") {
-                SubscriptionView()
+    private var lockedBanner: some View {
+        VStack(spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: "lock")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(Color.textTertiary)
+                Text("\(vm.recommendations.count - freeLimit) more recommendations unlocked with Premium")
+                    .font(Constants.Typography.caption)
+                    .foregroundStyle(Color.textSecondary)
+                Spacer()
             }
-            .buttonStyle(.borderedProminent)
-            .tint(Color.brewBrown)
+
+            NavigationLink(destination: SubscriptionView()) {
+                Text("Upgrade to Premium →")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(LinearPrimaryButtonStyle())
         }
-        .padding()
-        .frame(maxWidth: .infinity)
-        .background(Color(uiColor: .secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: Constants.Layout.cornerRadius))
+        .linearCard()
     }
 }

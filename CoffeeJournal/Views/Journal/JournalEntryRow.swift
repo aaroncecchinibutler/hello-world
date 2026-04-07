@@ -1,58 +1,50 @@
 import SwiftUI
 
+// MARK: - Linear-style row
+// Dense, no card wrapping at the row level. List provides the surface.
+// Left thumbnail, two-line text block, metadata trailing.
+
 struct JournalEntryRow: View {
     let entry: CoffeeEntry
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 11) {
             // Thumbnail
             thumbnailView
-                .frame(width: 60, height: 60)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.brewCream)
+                .frame(width: 44, height: 44)
+                .clipShape(RoundedRectangle(cornerRadius: 5))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 5)
+                        .strokeBorder(Color.appBorder, lineWidth: Constants.Layout.borderWidth)
                 )
 
-            VStack(alignment: .leading, spacing: 4) {
+            // Text block
+            VStack(alignment: .leading, spacing: 2) {
                 Text(entry.displayTitle)
-                    .font(.headline)
+                    .font(Constants.Typography.body.weight(.medium))
+                    .foregroundStyle(Color.textPrimary)
                     .lineLimit(1)
 
                 Text(entry.displaySubtitle)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .font(Constants.Typography.caption)
+                    .foregroundStyle(Color.textSecondary)
                     .lineLimit(1)
-
-                HStack(spacing: 6) {
-                    StarRatingDisplayView(rating: entry.rating, starSize: 11)
-
-                    Text("·")
-                        .foregroundStyle(.secondary)
-
-                    Text(entry.processingMethod.displayName)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-
-                    Text("·")
-                        .foregroundStyle(.secondary)
-
-                    Text(entry.brewMethod.displayName)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
             }
 
-            Spacer()
+            Spacer(minLength: 8)
 
-            Text(entry.dateBrewed.journalDisplayDate)
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-                .multilineTextAlignment(.trailing)
+            // Trailing metadata
+            VStack(alignment: .trailing, spacing: 3) {
+                StarRatingDisplayView(rating: entry.rating, starSize: 10)
+
+                Text(entry.dateBrewed.journalDisplayDate)
+                    .font(Constants.Typography.micro)
+                    .foregroundStyle(Color.textTertiary)
+            }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 6)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(entry.displayTitle), \(entry.roasterName), \(entry.rating) stars, \(entry.dateBrewed.journalDisplayDate)")
+        .accessibilityLabel("\(entry.displayTitle), \(entry.roasterName), \(entry.rating) stars")
     }
 
     @ViewBuilder
@@ -60,11 +52,12 @@ struct JournalEntryRow: View {
         if let photo = entry.primaryPhoto {
             CoffeePhotoView(photo: photo, contentMode: .fill)
         } else {
-            Image(systemName: "cup.and.saucer.fill")
-                .font(.title2)
-                .foregroundStyle(Color.brewBrown)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color.brewCream)
+            ZStack {
+                Color.appSurfaceSunken
+                Image(systemName: "cup.and.saucer")
+                    .font(.system(size: 16, weight: .light))
+                    .foregroundStyle(Color.textTertiary)
+            }
         }
     }
 }

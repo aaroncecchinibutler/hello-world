@@ -4,99 +4,121 @@ struct BrewSection: View {
     @Bindable var vm: EntryFormViewModel
 
     var body: some View {
-        Section("Brew") {
-            Picker("Method", selection: $vm.brewMethod) {
-                ForEach(BrewMethod.allCases) { method in
-                    Text(method.displayName).tag(method)
-                }
-            }
-
-            Picker("Grind Size", selection: $vm.brewParameters.grindSize) {
-                ForEach(GrindSize.allCases) { size in
-                    Text(size.displayName).tag(size)
-                }
-            }
-
-            // Numeric grind setting (optional)
-            HStack {
-                Text("Grind Setting")
-                    .foregroundStyle(.primary)
+        FormSection(title: "Brew") {
+            FormRow(label: "Method") {
                 Spacer()
-                if let numeric = vm.brewParameters.grindNumeric {
-                    Text(String(format: "%.0f", numeric))
-                        .foregroundStyle(.secondary)
+                Picker("", selection: $vm.brewMethod) {
+                    ForEach(BrewMethod.allCases) { m in Text(m.displayName).tag(m) }
                 }
-                TextField("Clicks/Setting", value: $vm.brewParameters.grindNumeric, format: .number)
+                .tint(Color.textSecondary)
+            }
+
+            FormRow(label: "Grind Size") {
+                Spacer()
+                Picker("", selection: $vm.brewParameters.grindSize) {
+                    ForEach(GrindSize.allCases) { s in Text(s.displayName).tag(s) }
+                }
+                .tint(Color.textSecondary)
+            }
+
+            FormRow(label: "Grind Setting") {
+                Spacer()
+                TextField("Optional", value: $vm.brewParameters.grindNumeric, format: .number)
+                    .font(Constants.Typography.body)
+                    .foregroundStyle(Color.textPrimary)
                     .multilineTextAlignment(.trailing)
                     .keyboardType(.decimalPad)
                     .frame(width: 80)
-                    .foregroundStyle(.secondary)
             }
 
-            // Dose
-            HStack {
-                Text("Dose")
-                Spacer()
-                Text(String(format: "%.1f g", vm.brewParameters.dosageGrams))
-                    .foregroundStyle(.secondary)
-            }
-            Slider(
+            sliderRow(
+                label: "Dose",
+                valueText: String(format: "%.1f g", vm.brewParameters.dosageGrams),
                 value: $vm.brewParameters.dosageGrams,
-                in: Constants.Brew.doseRange,
+                range: Constants.Brew.doseRange,
                 step: 0.5
             )
 
-            // Water
-            HStack {
-                Text("Water")
-                Spacer()
-                Text(String(format: "%.0f ml", vm.brewParameters.waterAmountML))
-                    .foregroundStyle(.secondary)
-            }
-            Slider(
+            sliderRow(
+                label: "Water",
+                valueText: String(format: "%.0f ml", vm.brewParameters.waterAmountML),
                 value: $vm.brewParameters.waterAmountML,
-                in: Constants.Brew.waterRange,
+                range: Constants.Brew.waterRange,
                 step: 5
             )
 
-            // Brew ratio display
-            HStack {
-                Text("Brew Ratio")
-                    .foregroundStyle(.secondary)
+            FormRow {
+                Text("Ratio")
+                    .font(Constants.Typography.body)
+                    .foregroundStyle(Color.textPrimary)
                 Spacer()
                 Text(String(format: "1:%.1f", vm.brewParameters.brewRatio))
-                    .foregroundStyle(.secondary)
+                    .font(Constants.Typography.mono)
+                    .foregroundStyle(Color.textTertiary)
             }
-            .font(.caption)
 
-            // Temperature
-            HStack {
-                Text("Water Temp")
-                Spacer()
-                Text(String(format: "%.0f°C", vm.brewParameters.waterTempCelsius))
-                    .foregroundStyle(.secondary)
-            }
-            Slider(
+            sliderRow(
+                label: "Temp",
+                valueText: String(format: "%.0f°C", vm.brewParameters.waterTempCelsius),
                 value: $vm.brewParameters.waterTempCelsius,
-                in: Constants.Brew.tempRange,
+                range: Constants.Brew.tempRange,
                 step: 1
             )
 
-            // Brew time
-            HStack {
-                Text("Brew Time")
-                Spacer()
-                Text(vm.brewParameters.brewTimeFormatted)
-                    .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text("Time")
+                        .font(Constants.Typography.body)
+                        .foregroundStyle(Color.textPrimary)
+                    Spacer()
+                    Text(vm.brewParameters.brewTimeFormatted)
+                        .font(Constants.Typography.mono)
+                        .foregroundStyle(Color.textSecondary)
+                }
+                Slider(
+                    value: Binding(
+                        get: { Double(vm.brewParameters.brewTimeSeconds) },
+                        set: { vm.brewParameters.brewTimeSeconds = Int($0) }
+                    ),
+                    in: Double(Constants.Brew.timeRange.lowerBound)...Double(Constants.Brew.timeRange.upperBound),
+                    step: 5
+                )
+                .tint(Color.appAccent)
             }
-            Slider(
-                value: Binding(
-                    get: { Double(vm.brewParameters.brewTimeSeconds) },
-                    set: { vm.brewParameters.brewTimeSeconds = Int($0) }
-                ),
-                in: Double(Constants.Brew.timeRange.lowerBound)...Double(Constants.Brew.timeRange.upperBound),
-                step: 5
+            .padding(.horizontal, Constants.Layout.pageInset)
+            .padding(.vertical, 11)
+            .overlay(
+                Rectangle().fill(Color.appBorder).frame(height: Constants.Layout.borderWidth),
+                alignment: .bottom
             )
         }
+    }
+
+    private func sliderRow(
+        label: String,
+        valueText: String,
+        value: Binding<Double>,
+        range: ClosedRange<Double>,
+        step: Double
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text(label)
+                    .font(Constants.Typography.body)
+                    .foregroundStyle(Color.textPrimary)
+                Spacer()
+                Text(valueText)
+                    .font(Constants.Typography.mono)
+                    .foregroundStyle(Color.textSecondary)
+            }
+            Slider(value: value, in: range, step: step)
+                .tint(Color.appAccent)
+        }
+        .padding(.horizontal, Constants.Layout.pageInset)
+        .padding(.vertical, 11)
+        .overlay(
+            Rectangle().fill(Color.appBorder).frame(height: Constants.Layout.borderWidth),
+            alignment: .bottom
+        )
     }
 }

@@ -3,78 +3,90 @@ import PhotosUI
 
 struct PhotoSection: View {
     @Bindable var vm: EntryFormViewModel
-    @State private var pickerItem: PhotosPickerItem? = nil
+    @State private var pickerItem: PhotosPickerItem?
     @State private var showingURLAlert = false
 
     var body: some View {
-        Section("Photos") {
-            // Photo thumbnails
+        FormSection(title: "Photos") {
+            // Thumbnails
             if !vm.stagedPhotos.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         ForEach(vm.stagedPhotos.indices, id: \.self) { i in
                             ZStack(alignment: .topTrailing) {
                                 CoffeePhotoView(photo: vm.stagedPhotos[i], contentMode: .fill)
-                                    .frame(width: 80, height: 80)
-                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                                    .frame(width: 72, height: 72)
+                                    .clipShape(RoundedRectangle(cornerRadius: 5))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 5)
+                                            .strokeBorder(Color.appBorder, lineWidth: Constants.Layout.borderWidth)
+                                    )
 
                                 Button {
                                     vm.stagedPhotos.remove(at: i)
                                 } label: {
                                     Image(systemName: "xmark.circle.fill")
-                                        .foregroundStyle(.white, .black.opacity(0.6))
+                                        .font(.system(size: 16))
+                                        .foregroundStyle(Color.textSecondary, Color.appSurface)
                                 }
-                                .offset(x: 6, y: -6)
+                                .offset(x: 5, y: -5)
                             }
                         }
                     }
-                    .padding(.vertical, 4)
+                    .padding(.horizontal, Constants.Layout.pageInset)
+                    .padding(.vertical, 10)
                 }
+                .overlay(
+                    Rectangle().fill(Color.appBorder).frame(height: Constants.Layout.borderWidth),
+                    alignment: .bottom
+                )
             }
 
-            // Add photo buttons
-            HStack(spacing: 16) {
-                // Camera
-                PhotoButton(icon: "camera", label: "Camera") {
+            // Add buttons — four equal columns
+            HStack(spacing: 0) {
+                photoButton(icon: "camera", label: "Camera") {
                     vm.showingCamera = true
                 }
 
-                // Photo Library
-                PhotosPickerButton(icon: "photo", label: "Library", item: $pickerItem)
-                    .onChange(of: pickerItem) { _, newItem in
-                        guard let newItem else { return }
-                        Task {
-                            if let data = try? await newItem.loadTransferable(type: Data.self),
-                               let uiImage = UIImage(data: data) {
-                                vm.addPhoto(from: uiImage, source: .library)
-                            }
+                divider
+
+                PhotosPicker(selection: $pickerItem, matching: .images) {
+                    photoButtonLabel(icon: "photo", label: "Library")
+                }
+                .buttonStyle(.plain)
+                .onChange(of: pickerItem) { _, item in
+                    guard let item else { return }
+                    Task {
+                        if let data = try? await item.loadTransferable(type: Data.self),
+                           let img = UIImage(data: data) {
+                            vm.addPhoto(from: img, source: .library)
                         }
                     }
+                }
 
-                // Web Search
-                PhotoButton(icon: "magnifyingglass", label: "Search") {
+                divider
+
+                photoButton(icon: "magnifyingglass", label: "Search") {
                     vm.showingImageSearch = true
                 }
 
-                // URL
-                PhotoButton(icon: "link", label: "URL") {
+                divider
+
+                photoButton(icon: "link", label: "URL") {
                     showingURLAlert = true
                 }
             }
-            .padding(.vertical, 4)
+            .frame(height: 56)
+            .background(Color.appSurface)
         }
         .sheet(isPresented: $vm.showingCamera) {
-            CameraPickerView { image in
-                vm.addPhoto(from: image, source: .camera)
-            }
+            CameraPickerView { vm.addPhoto(from: $0, source: .camera) }
         }
         .sheet(isPresented: $vm.showingImageSearch) {
-            ImageSearchSheet { result in
-                vm.addPhoto(from: result)
-            }
+            ImageSearchSheet { vm.addPhoto(from: $0) }
         }
         .alert("Image URL", isPresented: $showingURLAlert) {
-            TextField("https://...", text: $vm.pendingURLInput)
+            TextField("https://…", text: $vm.pendingURLInput)
                 .keyboardType(.URL)
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.never)
@@ -87,55 +99,36 @@ struct PhotoSection: View {
             Text("Paste a direct image URL.")
         }
     }
-}
 
-// MARK: - Helper subviews
+    // MARK: - Helpers
 
-private struct PhotoButton: View {
-    let icon: String
-    let label: String
-    let action: () -> Void
+    private var divider: some View {
+        Rectangle()
+            .fill(Color.appBorder)
+            .frame(width: Constants.Layout.borderWidth)
+    }
 
-    var body: some View {
+    private func photoButton(icon: String, label: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            VStack(spacing: 4) {
-                Image(systemName: icon)
-                    .font(.title3)
-                Text(label)
-                    .font(.caption2)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 8)
-            .background(Color(uiColor: .secondarySystemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 8))
+            photoButtonLabel(icon: icon, label: label)
         }
         .buttonStyle(.plain)
     }
-}
 
-private struct PhotosPickerButton: View {
-    let icon: String
-    let label: String
-    @Binding var item: PhotosPickerItem?
-
-    var body: some View {
-        PhotosPicker(selection: $item, matching: .images) {
-            VStack(spacing: 4) {
-                Image(systemName: icon)
-                    .font(.title3)
-                Text(label)
-                    .font(.caption2)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 8)
-            .background(Color(uiColor: .secondarySystemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 8))
+    private func photoButtonLabel(icon: String, label: String) -> some View {
+        VStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.system(size: 15, weight: .light))
+                .foregroundStyle(Color.textSecondary)
+            Text(label)
+                .font(Constants.Typography.micro)
+                .foregroundStyle(Color.textTertiary)
         }
-        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
-// MARK: - Camera UIViewControllerRepresentable
+// MARK: - Camera picker
 
 struct CameraPickerView: UIViewControllerRepresentable {
     var onCapture: (UIImage) -> Void
@@ -160,9 +153,7 @@ struct CameraPickerView: UIViewControllerRepresentable {
             didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]
         ) {
             picker.dismiss(animated: true)
-            if let image = info[.originalImage] as? UIImage {
-                onCapture(image)
-            }
+            if let image = info[.originalImage] as? UIImage { onCapture(image) }
         }
 
         func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {

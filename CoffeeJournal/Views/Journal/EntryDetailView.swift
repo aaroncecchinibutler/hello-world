@@ -6,78 +6,101 @@ struct EntryDetailView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 0) {
 
-                // Photo carousel
+                // Photo strip
                 if !entry.photos.isEmpty {
-                    photoCarousel
+                    photoStrip
                 }
 
-                // Header
-                VStack(alignment: .leading, spacing: 8) {
+                // Header block
+                VStack(alignment: .leading, spacing: 6) {
                     Text(entry.displayTitle)
-                        .font(.largeTitle.bold())
+                        .font(.system(size: 22, weight: .semibold))
+                        .foregroundStyle(Color.textPrimary)
 
-                    Text(entry.roasterName)
-                        .font(.title3)
-                        .foregroundStyle(.secondary)
+                    HStack(spacing: 6) {
+                        Text(entry.roasterName)
+                            .font(Constants.Typography.body)
+                            .foregroundStyle(Color.textSecondary)
 
-                    StarRatingDisplayView(rating: entry.rating, starSize: 20)
+                        if !entry.originCountry.isEmpty {
+                            dot
+                            Text(entry.originCountry)
+                                .font(Constants.Typography.body)
+                                .foregroundStyle(Color.textSecondary)
+                        }
+                    }
+
+                    StarRatingDisplayView(rating: entry.rating, starSize: 14)
+                        .padding(.top, 2)
                 }
-                .padding(.horizontal)
+                .padding(.horizontal, Constants.Layout.pageInset)
+                .padding(.vertical, 16)
 
-                // Detail cards
+                hairline
+
+                // Detail sections
                 Group {
-                    detailCard(title: "Origin") {
-                        DetailRow(label: "Country",    value: entry.originCountry)
-                        DetailRow(label: "Region",     value: entry.originRegion)
-                        if let farm = entry.originFarm { DetailRow(label: "Farm", value: farm) }
+                    detailSection(title: "Origin") {
+                        row("Country",  entry.originCountry)
+                        row("Region",   entry.originRegion)
+                        if let farm = entry.originFarm { row("Farm", farm) }
+                        row("Process",  entry.processingMethod.displayName)
+                        row("Roast",    entry.roastLevel.displayName)
                     }
 
-                    detailCard(title: "Coffee") {
-                        DetailRow(label: "Processing", value: entry.processingMethod.displayName)
-                        DetailRow(label: "Roast",      value: entry.roastLevel.displayName)
-                    }
+                    hairline
 
-                    detailCard(title: "Brew") {
-                        let params = entry.brewParameters
-                        DetailRow(label: "Method",     value: entry.brewMethod.displayName)
-                        DetailRow(label: "Grind",      value: params.grindSize.displayName)
-                        DetailRow(label: "Dose",       value: "\(params.dosageGrams, specifier: "%.1f") g")
-                        DetailRow(label: "Water",      value: "\(params.waterAmountML, specifier: "%.0f") ml")
-                        DetailRow(label: "Temp",       value: "\(params.waterTempCelsius, specifier: "%.0f")°C")
-                        DetailRow(label: "Time",       value: params.brewTimeFormatted)
-                        DetailRow(label: "Ratio",      value: "1:\(params.brewRatio, specifier: "%.1f")")
+                    detailSection(title: "Brew") {
+                        let p = entry.brewParameters
+                        row("Method",   entry.brewMethod.displayName)
+                        row("Grind",    p.grindSize.displayName)
+                        row("Dose",     String(format: "%.1f g", p.dosageGrams))
+                        row("Water",    String(format: "%.0f ml", p.waterAmountML))
+                        row("Ratio",    String(format: "1:%.1f", p.brewRatio))
+                        row("Temp",     String(format: "%.0f°C", p.waterTempCelsius))
+                        row("Time",     p.brewTimeFormatted)
                     }
 
                     if !entry.flavorTags.isEmpty {
-                        detailCard(title: "Flavour Notes") {
-                            TagCloudView(tags: entry.flavorTagNames, selectedTags: Set(entry.flavorTagNames))
-                                .padding(.top, 4)
+                        hairline
+                        detailSection(title: "Flavour") {
+                            TagCloudView(
+                                tags: entry.flavorTagNames,
+                                selectedTags: Set(entry.flavorTagNames)
+                            )
                         }
                     }
 
                     if !entry.personalNotes.isEmpty {
-                        detailCard(title: "Notes") {
+                        hairline
+                        detailSection(title: "Notes") {
                             Text(entry.personalNotes)
-                                .font(.body)
+                                .font(Constants.Typography.body)
+                                .foregroundStyle(Color.textPrimary)
+                                .fixedSize(horizontal: false, vertical: true)
                         }
                     }
                 }
-                .padding(.horizontal)
 
-                Text("Brewed on \(entry.dateBrewed.journalDisplayDateTime)")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-                    .padding(.horizontal)
-                    .padding(.bottom)
+                hairline
+
+                Text("Brewed \(entry.dateBrewed.journalDisplayDateTime)")
+                    .font(Constants.Typography.micro)
+                    .foregroundStyle(Color.textTertiary)
+                    .padding(.horizontal, Constants.Layout.pageInset)
+                    .padding(.vertical, 12)
             }
         }
-        .navigationTitle(entry.displayTitle)
+        .background(Color.appBackground)
+        .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Edit") { showingEditSheet = true }
+                    .font(Constants.Typography.body.weight(.medium))
+                    .foregroundStyle(Color.appAccent)
             }
         }
         .sheet(isPresented: $showingEditSheet) {
@@ -87,41 +110,50 @@ struct EntryDetailView: View {
 
     // MARK: - Subviews
 
-    private var photoCarousel: some View {
+    private var photoStrip: some View {
         TabView {
             ForEach(entry.photos) { photo in
-                CoffeePhotoView(photo: photo, contentMode: .fill)
-                    .clipped()
+                CoffeePhotoView(photo: photo, contentMode: .fill).clipped()
             }
         }
         .tabViewStyle(.page)
-        .frame(height: 260)
-        .clipShape(RoundedRectangle(cornerRadius: 0))
+        .frame(height: 240)
     }
 
-    private func detailCard<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
+    private var hairline: some View {
+        Rectangle()
+            .fill(Color.appBorder)
+            .frame(height: Constants.Layout.borderWidth)
+    }
+
+    private var dot: some View {
+        Circle()
+            .fill(Color.textTertiary)
+            .frame(width: 3, height: 3)
+    }
+
+    private func detailSection<Content: View>(
+        title: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title)
-                .font(.headline)
-                .foregroundStyle(.primary)
+                .sectionHeaderStyle()
             content()
         }
-        .cardStyle()
+        .padding(.horizontal, Constants.Layout.pageInset)
+        .padding(.vertical, 14)
     }
-}
 
-private struct DetailRow: View {
-    let label: String
-    let value: String
-
-    var body: some View {
-        HStack {
+    private func row(_ label: String, _ value: String) -> some View {
+        HStack(alignment: .top) {
             Text(label)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .frame(width: 90, alignment: .leading)
+                .font(Constants.Typography.caption)
+                .foregroundStyle(Color.textTertiary)
+                .frame(width: 72, alignment: .leading)
             Text(value)
-                .font(.subheadline)
+                .font(Constants.Typography.body)
+                .foregroundStyle(Color.textPrimary)
             Spacer()
         }
     }

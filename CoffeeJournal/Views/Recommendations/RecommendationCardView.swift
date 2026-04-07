@@ -6,91 +6,99 @@ struct RecommendationCardView: View {
     @State private var showingSafari = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 0) {
+
             // Header
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack {
-                        if recommendation.isSponsored {
-                            Text("SPONSORED")
-                                .font(.caption2)
-                                .fontWeight(.semibold)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Color.secondary.opacity(0.2))
-                                .clipShape(Capsule())
-                        }
-                        Spacer()
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(alignment: .firstTextBaseline) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(recommendation.coffeeName)
+                            .font(Constants.Typography.body.weight(.semibold))
+                            .foregroundStyle(Color.textPrimary)
+                        Text(recommendation.roasterName)
+                            .font(Constants.Typography.caption)
+                            .foregroundStyle(Color.textSecondary)
                     }
-                    Text(recommendation.coffeeName)
-                        .font(.headline)
-                    Text(recommendation.roasterName)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                VStack(alignment: .trailing) {
+                    Spacer()
                     if let price = recommendation.priceUSD {
-                        Text(String(format: "$%.2f", price))
-                            .font(.headline)
-                            .foregroundStyle(Color.brewBrown)
-                    }
-                    if let grams = recommendation.weightGrams {
-                        Text("\(grams)g")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                        Text(String(format: "$%.0f", price))
+                            .font(Constants.Typography.body.weight(.medium))
+                            .foregroundStyle(Color.textPrimary)
                     }
                 }
+
+                // Attribute chips
+                HStack(spacing: 4) {
+                    if recommendation.isSponsored {
+                        Text("Sponsored")
+                            .font(Constants.Typography.micro)
+                            .foregroundStyle(Color.textTertiary)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(Color.appSurfaceSunken)
+                            .clipShape(Capsule())
+                            .overlay(Capsule().strokeBorder(Color.appBorder, lineWidth: Constants.Layout.borderWidth))
+                    }
+                    TagChipView(name: recommendation.originCountry)
+                    TagChipView(name: recommendation.processingMethod.displayName)
+                    TagChipView(name: recommendation.roastLevel.displayName)
+                }
             }
+            .padding(Constants.Layout.cardPadding)
 
-            // Tags
-            HStack(spacing: 6) {
-                TagChipView(name: recommendation.originCountry)
-                TagChipView(name: recommendation.processingMethod.displayName)
-                TagChipView(name: recommendation.roastLevel.displayName)
-            }
+            Rectangle().fill(Color.appBorder).frame(height: Constants.Layout.borderWidth)
 
-            Text(recommendation.description)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            // Description + flavours
+            VStack(alignment: .leading, spacing: 8) {
+                Text(recommendation.description)
+                    .font(Constants.Typography.caption)
+                    .foregroundStyle(Color.textSecondary)
 
-            // Flavor tags
-            if !recommendation.flavorTags.isEmpty {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 6) {
-                        ForEach(recommendation.flavorTags, id: \.self) { tag in
-                            TagChipView(name: tag)
+                if !recommendation.flavorTags.isEmpty {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 4) {
+                            ForEach(recommendation.flavorTags, id: \.self) {
+                                TagChipView(name: $0)
+                            }
                         }
                     }
                 }
             }
+            .padding(Constants.Layout.cardPadding)
 
-            // Match score bar
-            if recommendation.matchScore > 0 {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Match Score")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                    GeometryReader { geo in
-                        ZStack(alignment: .leading) {
-                            Capsule().fill(Color.secondary.opacity(0.2))
-                            Capsule()
-                                .fill(Color.brewBrown.gradient)
-                                .frame(width: geo.size.width * recommendation.matchScore)
+            // Match score + CTA
+            if recommendation.matchScore > 0 || recommendation.purchaseURL != nil {
+                Rectangle().fill(Color.appBorder).frame(height: Constants.Layout.borderWidth)
+
+                HStack(spacing: 12) {
+                    if recommendation.matchScore > 0 {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("Match")
+                                .font(Constants.Typography.micro)
+                                .foregroundStyle(Color.textTertiary)
+                            GeometryReader { geo in
+                                ZStack(alignment: .leading) {
+                                    RoundedRectangle(cornerRadius: 2).fill(Color.appBorder)
+                                    RoundedRectangle(cornerRadius: 2)
+                                        .fill(Color.appAccent)
+                                        .frame(width: geo.size.width * recommendation.matchScore)
+                                }
+                            }
+                            .frame(height: 4)
                         }
+                        .frame(maxWidth: .infinity)
                     }
-                    .frame(height: 6)
-                }
-            }
 
-            // Buy button
-            if recommendation.purchaseURL != nil {
-                Button("Shop Now →") { showingSafari = true }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.brewBrown)
+                    if recommendation.purchaseURL != nil {
+                        Button("Shop →") { showingSafari = true }
+                            .buttonStyle(LinearButtonStyle())
+                    }
+                }
+                .padding(.horizontal, Constants.Layout.cardPadding)
+                .padding(.vertical, 10)
             }
         }
-        .cardStyle()
+        .linearCard()
         .sheet(isPresented: $showingSafari) {
             if let url = recommendation.purchaseURL {
                 SafariView(url: url)
@@ -99,14 +107,10 @@ struct RecommendationCardView: View {
     }
 }
 
-// MARK: - SafariView wrapper
-
 struct SafariView: UIViewControllerRepresentable {
     let url: URL
-
     func makeUIViewController(context: Context) -> SFSafariViewController {
         SFSafariViewController(url: url)
     }
-
     func updateUIViewController(_ uiViewController: SFSafariViewController, context: Context) {}
 }

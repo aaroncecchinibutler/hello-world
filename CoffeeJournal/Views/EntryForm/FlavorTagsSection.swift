@@ -6,17 +6,15 @@ struct FlavorTagsSection: View {
     @State private var selectedCategory: FlavorCategory? = nil
 
     var filteredPresets: [(name: String, category: FlavorCategory)] {
-        guard let cat = selectedCategory else {
-            return Constants.Flavor.presetTags
-        }
+        guard let cat = selectedCategory else { return Constants.Flavor.presetTags }
         return Constants.Flavor.presetTags.filter { $0.category == cat }
     }
 
     var body: some View {
-        Section("Flavour Notes") {
-            // Category filter pills
+        FormSection(title: "Flavour Notes") {
+            // Category filter strip
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 6) {
+                HStack(spacing: 5) {
                     TagChipView(name: "All", isSelected: selectedCategory == nil) {
                         selectedCategory = nil
                     }
@@ -29,10 +27,15 @@ struct FlavorTagsSection: View {
                         }
                     }
                 }
-                .padding(.vertical, 4)
+                .padding(.horizontal, Constants.Layout.pageInset)
+                .padding(.vertical, 10)
             }
+            .overlay(
+                Rectangle().fill(Color.appBorder).frame(height: Constants.Layout.borderWidth),
+                alignment: .bottom
+            )
 
-            // Preset tag cloud
+            // Tag cloud
             TagCloudView(
                 tags: filteredPresets.map(\.name),
                 selectedTags: vm.selectedFlavorTagNames
@@ -43,35 +46,54 @@ struct FlavorTagsSection: View {
                     vm.selectedFlavorTagNames.insert(tag)
                 }
             }
+            .padding(.horizontal, Constants.Layout.pageInset)
+            .padding(.vertical, 12)
+            .overlay(
+                Rectangle().fill(Color.appBorder).frame(height: Constants.Layout.borderWidth),
+                alignment: .bottom
+            )
 
             // Custom tag input
-            HStack {
+            HStack(spacing: 8) {
                 TextField("Add custom note…", text: $customTag)
+                    .font(Constants.Typography.body)
+                    .foregroundStyle(Color.textPrimary)
                     .submitLabel(.done)
                     .onSubmit { addCustomTag() }
-                Button("Add") { addCustomTag() }
-                    .disabled(customTag.trimmingCharacters(in: .whitespaces).isEmpty)
-            }
 
-            // Selected tags summary
+                if !customTag.trimmingCharacters(in: .whitespaces).isEmpty {
+                    Button("Add") { addCustomTag() }
+                        .buttonStyle(LinearButtonStyle())
+                }
+            }
+            .padding(.horizontal, Constants.Layout.pageInset)
+            .padding(.vertical, 10)
+            .overlay(
+                Rectangle().fill(Color.appBorder).frame(height: Constants.Layout.borderWidth),
+                alignment: .bottom
+            )
+
+            // Selected summary
             if !vm.selectedFlavorTagNames.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack {
+                    HStack(spacing: 5) {
                         ForEach(vm.selectedFlavorTagNames.sorted(), id: \.self) { tag in
                             TagChipView(name: tag, isSelected: true) {
                                 vm.selectedFlavorTagNames.remove(tag)
                             }
                         }
                     }
+                    .padding(.horizontal, Constants.Layout.pageInset)
+                    .padding(.vertical, 8)
                 }
             }
         }
     }
 
     private func addCustomTag() {
-        let trimmed = customTag.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty else { return }
-        vm.selectedFlavorTagNames.insert(trimmed)
+        let t = customTag.trimmingCharacters(in: .whitespaces)
+        guard !t.isEmpty else { return }
+        vm.selectedFlavorTagNames.insert(t)
         customTag = ""
     }
 }

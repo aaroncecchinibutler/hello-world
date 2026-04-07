@@ -4,16 +4,27 @@ struct CoffeeInfoSection: View {
     @Bindable var vm: EntryFormViewModel
 
     var body: some View {
-        Section("Coffee Info") {
-            LabeledContent("Coffee Name") {
+        FormSection(title: "Coffee") {
+            FormRow(label: "Name") {
+                Spacer()
                 TextField("e.g. Yirgacheffe Natural", text: $vm.coffeeName)
+                    .font(Constants.Typography.body)
+                    .foregroundStyle(Color.textPrimary)
                     .multilineTextAlignment(.trailing)
             }
-            LabeledContent("Roaster") {
+            FormRow(label: "Roaster") {
+                Spacer()
                 TextField("e.g. Onyx Coffee Lab", text: $vm.roasterName)
+                    .font(Constants.Typography.body)
+                    .foregroundStyle(Color.textPrimary)
                     .multilineTextAlignment(.trailing)
             }
-            DatePicker("Date Brewed", selection: $vm.dateBrewed, displayedComponents: .date)
+            FormRow(label: "Date Brewed") {
+                Spacer()
+                DatePicker("", selection: $vm.dateBrewed, displayedComponents: .date)
+                    .labelsHidden()
+                    .tint(Color.appAccent)
+            }
         }
     }
 }

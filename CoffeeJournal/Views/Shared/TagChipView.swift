@@ -1,5 +1,8 @@
 import SwiftUI
 
+// MARK: - Linear-style tag chip
+// Small, precise, border-driven. Selected state inverts to accent fill.
+
 struct TagChipView: View {
     let name: String
     var isSelected: Bool = false
@@ -7,19 +10,29 @@ struct TagChipView: View {
 
     var body: some View {
         Text(name)
-            .font(.caption)
-            .fontWeight(.medium)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background(isSelected ? Color.brewBrown : Color(uiColor: .tertiarySystemFill))
-            .foregroundStyle(isSelected ? .white : .primary)
-            .clipShape(Capsule())
+            .font(Constants.Typography.micro)
+            .tracking(0.1)
+            .foregroundStyle(isSelected ? Color.appBackground : Color.textSecondary)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(
+                Capsule()
+                    .fill(isSelected ? Color.appAccent : Color.appSurface)
+            )
+            .overlay(
+                Capsule()
+                    .strokeBorder(
+                        isSelected ? Color.appAccent : Color.appBorder,
+                        lineWidth: Constants.Layout.borderWidth
+                    )
+            )
             .onTapGesture { onTap?() }
-            .animation(.easeInOut(duration: 0.15), value: isSelected)
+            .animation(.easeInOut(duration: 0.12), value: isSelected)
     }
 }
 
-/// A wrapping flow layout for tag chips
+// MARK: - Wrapping flow layout
+
 struct TagCloudView: View {
     let tags: [String]
     var selectedTags: Set<String> = []
@@ -29,7 +42,7 @@ struct TagCloudView: View {
 
     var body: some View {
         GeometryReader { geo in
-            self.generateContent(in: geo)
+            generateContent(in: geo)
         }
         .frame(height: totalHeight)
     }
@@ -40,20 +53,15 @@ struct TagCloudView: View {
 
         return ZStack(alignment: .topLeading) {
             ForEach(tags, id: \.self) { tag in
-                TagChipView(
-                    name: tag,
-                    isSelected: selectedTags.contains(tag)
-                ) {
+                TagChipView(name: tag, isSelected: selectedTags.contains(tag)) {
                     onToggle?(tag)
                 }
                 .alignmentGuide(.leading) { d in
                     if abs(width - d.width) > geo.size.width {
-                        width = 0
-                        height -= d.height + 6
+                        width = 0; height -= d.height + 5
                     }
                     let result = width
-                    if tag == tags.last { width = 0 }
-                    else { width -= d.width + 6 }
+                    if tag == tags.last { width = 0 } else { width -= d.width + 5 }
                     return result
                 }
                 .alignmentGuide(.top) { _ in
@@ -65,14 +73,14 @@ struct TagCloudView: View {
         }
         .background(
             GeometryReader { geo in
-                Color.clear.preference(key: HeightKey.self, value: geo.size.height)
+                Color.clear.preference(key: TagCloudHeightKey.self, value: geo.size.height)
             }
         )
-        .onPreferenceChange(HeightKey.self) { totalHeight = $0 }
+        .onPreferenceChange(TagCloudHeightKey.self) { totalHeight = $0 }
     }
 }
 
-private struct HeightKey: PreferenceKey {
+private struct TagCloudHeightKey: PreferenceKey {
     static var defaultValue: CGFloat = 0
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
         value = max(value, nextValue())
